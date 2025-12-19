@@ -195,14 +195,20 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
-  const value = {
+  // value 객체를 useMemo로 최적화하여 불필요한 리렌더링 방지
+  const value = React.useMemo(() => ({
     user,
     loading,
     register,
     login,
     logout,
     isAuthenticated: !!user
-  }
+  }), [user, loading])
+
+  // user 상태 변경 시 로그
+  React.useEffect(() => {
+    console.log('🔄 AuthContext user 상태 변경:', user ? `로그인됨 (${user.username || user.email})` : '로그아웃됨')
+  }, [user])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
