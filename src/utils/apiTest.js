@@ -3,13 +3,29 @@ import axios from 'axios'
 import { API_URL } from '../config/api.js'
 
 export const testApiConnection = async () => {
+  // API URL이 설정되지 않았으면 테스트 불가
+  if (!API_URL || API_URL === '') {
+    return {
+      success: false,
+      error: 'API URL이 설정되지 않았습니다. Vercel 환경 변수에 VITE_API_URL을 설정해주세요.'
+    }
+  }
+
   try {
     console.log('🔍 API 연결 테스트 시작...')
     console.log('📍 API URL:', API_URL)
     
-    // 간단한 GET 요청으로 서버 상태 확인
-    const response = await axios.get(`${API_URL.replace('/api', '')}`, {
-      timeout: 5000,
+    // API URL이 상대 경로(/api)인지 확인
+    if (API_URL.startsWith('/')) {
+      console.warn('⚠️ API URL이 상대 경로입니다. 백엔드가 별도 서버에 배포된 경우 절대 URL이 필요합니다.')
+    }
+    
+    // 간단한 GET 요청으로 서버 상태 확인 (API URL의 루트)
+    const rootUrl = API_URL.replace('/api', '') || API_URL
+    console.log('🔗 테스트 URL:', rootUrl)
+    
+    const response = await axios.get(rootUrl, {
+      timeout: 10000,
       validateStatus: () => true // 모든 상태 코드 허용
     })
     
