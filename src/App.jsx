@@ -14,11 +14,17 @@ function App() {
   // 사용자가 로그인하면 메모 불러오기
   useEffect(() => {
     if (user) {
-      console.log('✅ 사용자 로그인 확인, 메모 불러오기:', user.username)
+      console.log('✅ 사용자 로그인 확인, 메모 불러오기:', user.username || user.email)
+      console.log('🔄 메모 화면으로 전환 중...')
       fetchMemos()
     } else {
       console.log('⏳ 사용자 없음, 인증 화면 표시 중')
     }
+  }, [user])
+
+  // user 상태 변경 디버깅
+  useEffect(() => {
+    console.log('📊 User 상태 변경:', user ? `로그인됨 (${user.username || user.email})` : '로그아웃됨')
   }, [user])
 
   // 메모 불러오기

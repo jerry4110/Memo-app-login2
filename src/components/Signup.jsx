@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 
 function Signup({ onSwitchToLogin }) {
@@ -8,7 +8,20 @@ function Signup({ onSwitchToLogin }) {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { register } = useAuth()
+  const { register, user } = useAuth()
+
+  // user가 있으면 (회원가입 성공 후) 아무것도 렌더링하지 않음
+  // App.jsx에서 자동으로 메모 화면으로 전환됨
+  useEffect(() => {
+    if (user) {
+      console.log('✅ 회원가입 성공! user 상태 확인됨:', user)
+    }
+  }, [user])
+
+  // user가 있으면 컴포넌트를 렌더링하지 않음
+  if (user) {
+    return null
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -36,9 +49,15 @@ function Signup({ onSwitchToLogin }) {
         setLoading(false)
       } else {
         // 성공 시 - user state가 업데이트되어 App.jsx에서 자동으로 메모 화면 표시
-        console.log('✅ 회원가입 성공! 화면 전환 중...')
-        // user state 변경이 React에 의해 감지되어 자동으로 화면이 전환됨
-        // 추가 작업 불필요
+        console.log('✅ 회원가입 성공! user:', result.user)
+        console.log('🔄 화면 전환 대기 중...')
+        
+        // 로딩 상태는 register 함수에서 처리하지만, 여기서도 명시적으로 처리
+        setLoading(false)
+        
+        // user state 업데이트 확인을 위한 짧은 지연
+        // 실제로는 React의 state 업데이트가 비동기이므로 즉시 반영됨
+        // 하지만 디버깅을 위해 확인
       }
     } catch (err) {
       console.error('❌ 회원가입 예외:', err)

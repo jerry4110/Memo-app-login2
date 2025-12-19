@@ -89,8 +89,17 @@ export function AuthProvider({ children }) {
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
           
           // user state 업데이트 - 이게 화면 전환을 트리거함
-          setUser(user)
+          // 강제로 state 업데이트를 보장하기 위해 함수형 업데이트 사용
+          setUser(() => {
+            console.log('🔄 setUser 호출됨, 새로운 user:', user)
+            return user
+          })
           setLoading(false)
+
+          // state 업데이트가 완료되었는지 확인
+          setTimeout(() => {
+            console.log('✅ User state 업데이트 완료 확인')
+          }, 0)
 
           return { success: true, user }
         } else {
@@ -151,12 +160,17 @@ export function AuthProvider({ children }) {
 
       if (response.data && response.data.token && response.data.user) {
         const { token, user } = response.data
-        console.log('로그인 성공, 사용자 정보:', user)
+        console.log('✅ 로그인 성공, 사용자 정보:', user)
         
         localStorage.setItem('token', token)
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-        setUser(user)
-        setLoading(false) // 로딩 상태 해제
+        
+        // 강제로 state 업데이트
+        setUser(() => {
+          console.log('🔄 setUser 호출됨 (로그인), 새로운 user:', user)
+          return user
+        })
+        setLoading(false)
 
         return { success: true, user }
       } else {

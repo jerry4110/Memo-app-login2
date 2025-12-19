@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 
 function Login({ onSwitchToSignup }) {
@@ -6,7 +6,19 @@ function Login({ onSwitchToSignup }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { login } = useAuth()
+  const { login, user } = useAuth()
+
+  // user가 있으면 (로그인 성공 후) 아무것도 렌더링하지 않음
+  useEffect(() => {
+    if (user) {
+      console.log('✅ 로그인 성공! user 상태 확인됨:', user)
+    }
+  }, [user])
+
+  // user가 있으면 컴포넌트를 렌더링하지 않음
+  if (user) {
+    return null
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
