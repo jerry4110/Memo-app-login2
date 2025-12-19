@@ -10,13 +10,20 @@ node_modules
 /build
 /dist
 
-# Misc
-.DS_Store
+# Database
+server/database.sqlite
+*.sqlite
+*.sqlite3
+
+# Environment variables
+.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
+# Misc
+.DS_Store
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -26,4 +33,3 @@ yarn-error.log*
 .idea
 *.swp
 *.swo
-

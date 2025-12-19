@@ -1,38 +1,58 @@
 import React, { useState, useEffect } from 'react'
+import { useAuth } from './context/AuthContext'
+import Auth from './components/Auth'
+import { getMemos, createMemo, updateMemo, deleteMemo } from './api/memos'
 import './App.css'
 
 function App() {
+  const { user, loading, logout } = useAuth()
   const [memos, setMemos] = useState([])
   const [editingId, setEditingId] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [loadingMemos, setLoadingMemos] = useState(false)
 
-  // 로컬 스토리지에서 메모 불러오기
+  // 사용자가 로그인하면 메모 불러오기
   useEffect(() => {
-    const savedMemos = localStorage.getItem('memos')
-    if (savedMemos) {
-      setMemos(JSON.parse(savedMemos))
+    if (user) {
+      fetchMemos()
     }
-  }, [])
+  }, [user])
 
-  // 메모가 변경될 때마다 로컬 스토리지에 저장
-  useEffect(() => {
-    localStorage.setItem('memos', JSON.stringify(memos))
-  }, [memos])
+  // 메모 불러오기
+  const fetchMemos = async () => {
+    setLoadingMemos(true)
+    const result = await getMemos()
+    if (result.success) {
+      setMemos(result.memos)
+    }
+    setLoadingMemos(false)
+  }
+
+  // 로딩 중
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-100">
+        <div className="text-slate-500">로딩 중...</div>
+      </div>
+    )
+  }
+
+  // 로그인하지 않은 경우
+  if (!user) {
+    return <Auth />
+  }
 
   // 새 메모 생성
-  const handleNewMemo = () => {
+  const handleNewMemo = async () => {
     const newMemo = {
-      id: Date.now(),
+      id: null,
       title: '',
       content: '',
       createdAt: new Date().toISOString()
     }
-    // 검색어 초기화하여 새 메모가 보이도록 함
     setSearchQuery('')
-    // 새 메모를 배열 맨 앞에 추가
     setMemos(prevMemos => [newMemo, ...prevMemos])
-    // 수정 모드로 전환
-    setEditingId(newMemo.id)
+    setEditingId('new')
   }
 
   // 메모 수정 모드로 전환
@@ -41,27 +61,61 @@ function App() {
   }
 
   // 메모 저장
-  const handleSave = (id, title, content) => {
-    setMemos(memos.map(memo => 
-      memo.id === id 
-        ? { ...memo, title, content, updatedAt: new Date().toISOString() }
-        : memo
-    ))
+  const handleSave = async (id, title, content) => {
+    let result
+    if (id === 'new' || !id) {
+      // 새 메모 생성
+      result = await createMemo(title, content)
+      if (result.success) {
+        setMemos(prevMemos => {
+          const filtered = prevMemos.filter(m => m.id !== 'new' && m.id !== null)
+          return [result.memo, ...filtered]
+        })
+      }
+    } else {
+      // 기존 메모 수정
+      result = await updateMemo(id, title, content)
+      if (result.success) {
+        setMemos(prevMemos => 
+          prevMemos.map(memo => 
+            memo.id === id ? result.memo : memo
+          )
+        )
+      }
+    }
     setEditingId(null)
+    if (!result.success) {
+      alert(result.error || '저장에 실패했습니다')
+    }
   }
 
   // 메모 삭제
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
+    if (id === 'new' || !id) {
+      // 아직 저장되지 않은 메모
+      setMemos(prevMemos => prevMemos.filter(memo => memo.id !== id))
+      setEditingId(null)
+      return
+    }
+
     if (window.confirm('정말 삭제하시겠습니까?')) {
-      setMemos(memos.filter(memo => memo.id !== id))
-      if (editingId === id) {
-        setEditingId(null)
+      const result = await deleteMemo(id)
+      if (result.success) {
+        setMemos(prevMemos => prevMemos.filter(memo => memo.id !== id))
+        if (editingId === id) {
+          setEditingId(null)
+        }
+      } else {
+        alert(result.error || '삭제에 실패했습니다')
       }
     }
   }
 
   // 수정 취소
   const handleCancel = (id) => {
+    if (id === 'new' || !id) {
+      setMemos(prevMemos => prevMemos.filter(memo => memo.id !== id))
+    }
     setEditingId(null)
   }
 
@@ -83,7 +137,17 @@ function App() {
               <span>📝</span>
               <span>메모 앱</span>
             </h1>
-            <p className="text-sm text-slate-500 mt-1">메모를 작성하고 검색하세요</p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-sm text-slate-500">
+                {user.username}님 안녕하세요!
+              </p>
+              <button
+                onClick={logout}
+                className="text-xs text-rose-500 hover:text-rose-600 font-semibold"
+              >
+                로그아웃
+              </button>
+            </div>
           </div>
           <div className="flex flex-col gap-2 w-full md:flex-row md:w-auto">
             <input
@@ -104,7 +168,11 @@ function App() {
         </header>
 
         <main className="memo-container">
-          {filteredMemos.length === 0 ? (
+          {loadingMemos ? (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white/70 text-center py-14 text-slate-500 text-sm shadow-sm">
+              메모를 불러오는 중...
+            </div>
+          ) : filteredMemos.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white/70 text-center py-14 text-slate-500 text-sm shadow-sm">
               {searchQuery ? '검색 결과가 없습니다.' : '메모가 없습니다. 새 메모를 만들어보세요!'}
             </div>
@@ -112,9 +180,9 @@ function App() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredMemos.map(memo => (
                 <MemoItem
-                  key={memo.id}
+                  key={memo.id || 'new'}
                   memo={memo}
-                  isEditing={editingId === memo.id}
+                  isEditing={editingId === memo.id || editingId === 'new'}
                   onEdit={handleEdit}
                   onSave={handleSave}
                   onCancel={handleCancel}
@@ -143,7 +211,6 @@ function MemoItem({ memo, isEditing, onEdit, onSave, onCancel, onDelete }) {
   }, [isEditing, memo.title, memo.content])
 
   const handleSaveClick = () => {
-    // 항상 저장 (빈 메모도 저장 가능)
     onSave(memo.id, title, content)
   }
 
@@ -198,13 +265,13 @@ function MemoItem({ memo, isEditing, onEdit, onSave, onCancel, onDelete }) {
             {memo.title || '제목 없음'}
           </h3>
           <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-500">
-            {new Date(memo.createdAt).toLocaleDateString('ko-KR', {
+            {memo.created_at ? new Date(memo.created_at).toLocaleDateString('ko-KR', {
               year: 'numeric',
               month: 'short',
               day: 'numeric',
               hour: '2-digit',
               minute: '2-digit'
-            })}
+            }) : ''}
           </span>
         </div>
         <div className="memo-content-preview flex-1 text-xs text-slate-600 leading-relaxed mt-1">
