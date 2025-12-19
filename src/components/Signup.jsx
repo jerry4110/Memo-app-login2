@@ -36,12 +36,13 @@ function Signup({ onSwitchToLogin }) {
         setLoading(false)
       } else {
         // 성공 시 - user state가 업데이트되어 App.jsx에서 자동으로 메모 화면 표시
-        // 로딩 상태는 register 함수 내부에서 처리됨
-        console.log('회원가입 성공, 화면 전환 대기 중...')
+        console.log('✅ 회원가입 성공! 화면 전환 중...')
+        // user state 변경이 React에 의해 감지되어 자동으로 화면이 전환됨
+        // 추가 작업 불필요
       }
     } catch (err) {
-      console.error('회원가입 예외:', err)
-      setError('알 수 없는 오류가 발생했습니다')
+      console.error('❌ 회원가입 예외:', err)
+      setError(`예외 발생: ${err.message || '알 수 없는 오류가 발생했습니다'}`)
       setLoading(false)
     }
   }

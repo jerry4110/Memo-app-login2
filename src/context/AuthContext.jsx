@@ -57,38 +57,83 @@ export function AuthProvider({ children }) {
 
   const register = async (username, email, password) => {
     try {
-      console.log('회원가입 요청:', { username, email, API_URL: `${API_URL}/auth/register` })
+      const requestUrl = `${API_URL}/auth/register`
+      console.log('📤 회원가입 요청 시작')
+      console.log('📍 API URL:', requestUrl)
+      console.log('📝 요청 데이터:', { username, email, password: '***' })
       
-      const response = await axios.post(`${API_URL}/auth/register`, {
+      const response = await axios.post(requestUrl, {
         username,
         email,
         password
+      }, {
+        timeout: 30000, // 30초 타임아웃
+        validateStatus: function (status) {
+          return status >= 200 && status < 500 // 400대 에러도 catch하도록
+        }
       })
 
-      logAPIResponse(response, '회원가입')
+      console.log('📥 회원가입 응답:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: response.data
+      })
 
-      if (response.data && response.data.token && response.data.user) {
-        const { token, user } = response.data
-        console.log('회원가입 성공, 사용자 정보:', user)
-        
-        localStorage.setItem('token', token)
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-        setUser(user)
-        setLoading(false) // 로딩 상태 해제
+      if (response.status === 201 || response.status === 200) {
+        if (response.data && response.data.token && response.data.user) {
+          const { token, user } = response.data
+          console.log('✅ 회원가입 성공!')
+          console.log('👤 사용자 정보:', user)
+          
+          localStorage.setItem('token', token)
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+          
+          // user state 업데이트 - 이게 화면 전환을 트리거함
+          setUser(user)
+          setLoading(false)
 
-        return { success: true, user }
+          return { success: true, user }
+        } else {
+          console.error('❌ 응답 데이터 형식 오류:', response.data)
+          return {
+            success: false,
+            error: `서버 응답 오류: 응답에 token 또는 user 정보가 없습니다. 응답: ${JSON.stringify(response.data)}`
+          }
+        }
       } else {
-        console.error('회원가입 응답 형식 오류:', response.data)
+        console.error('❌ HTTP 오류:', response.status, response.data)
         return {
           success: false,
-          error: '회원가입 응답 형식이 올바르지 않습니다'
+          error: response.data?.error || `서버 오류 (${response.status}): ${response.statusText}`
         }
       }
     } catch (error) {
+      console.error('❌ 회원가입 예외 발생:', error)
+      
+      if (error.code === 'ECONNABORTED') {
+        return {
+          success: false,
+          error: '요청 시간이 초과되었습니다. 백엔드 서버가 실행 중인지 확인해주세요.'
+        }
+      }
+      
+      if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error')) {
+        return {
+          success: false,
+          error: `네트워크 오류: API 서버에 연결할 수 없습니다.\n\n확인사항:\n1. 백엔드 서버가 배포되어 있는지 확인\n2. API URL이 올바른지 확인: ${API_URL}\n3. 브라우저 콘솔(F12)에서 네트워크 탭 확인`
+        }
+      }
+
       logAPIError(error, '회원가입')
+      
+      const errorMessage = error.response?.data?.error 
+        || error.response?.data?.message
+        || error.message 
+        || '회원가입에 실패했습니다'
+      
       return {
         success: false,
-        error: error.response?.data?.error || error.message || '회원가입에 실패했습니다'
+        error: `${errorMessage}\n\n(상태 코드: ${error.response?.status || 'N/A'})`
       }
     }
   }
