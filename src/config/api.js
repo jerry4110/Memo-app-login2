@@ -18,9 +18,9 @@ const getApiUrl = () => {
     return url
   }
   
-  // 3. 프로덕션 모드인데 환경 변수가 없으면 명확한 오류
+  // 3. 프로덕션 모드인데 환경 변수가 없으면 경고만 표시 (alert 제거)
   const errorMsg = `
-    ⚠️⚠️⚠️ 중요: API URL이 설정되지 않았습니다! ⚠️⚠️⚠️
+    ⚠️ 중요: API URL이 설정되지 않았습니다!
     
     Vercel Dashboard에서 다음을 설정해주세요:
     1. Settings → Environment Variables
@@ -31,11 +31,10 @@ const getApiUrl = () => {
     
     현재 프로덕션 환경에서는 API 요청이 작동하지 않습니다.
   `
-  console.error(errorMsg)
-  alert('⚠️ API 서버 URL이 설정되지 않았습니다.\n\nVercel Dashboard에서 VITE_API_URL 환경 변수를 설정해주세요.\n\n자세한 내용은 브라우저 콘솔을 확인하세요.')
+  console.warn(errorMsg)
   
-  // 상대 경로는 작동하지 않으므로 빈 문자열 반환 (명확한 오류를 위해)
-  // 실제로는 환경 변수를 반드시 설정해야 함
+  // 상대 경로는 작동하지 않으므로 빈 문자열 반환
+  // Auth 컴포넌트에서 이미 경고 메시지를 표시하므로 alert는 제거
   return ''
 }
 

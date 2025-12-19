@@ -58,7 +58,7 @@ export function AuthProvider({ children }) {
   const register = async (username, email, password) => {
     // API URL 확인
     if (!API_URL || API_URL === '') {
-      const error = 'API 서버 URL이 설정되지 않았습니다.\n\nVercel Dashboard → Settings → Environment Variables에서 VITE_API_URL을 설정해주세요.'
+      const error = 'API 서버 URL이 설정되지 않았습니다. Vercel Dashboard → Settings → Environment Variables에서 VITE_API_URL을 설정해주세요.'
       console.error('❌', error)
       return {
         success: false,
@@ -160,7 +160,7 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     // API URL 확인
     if (!API_URL || API_URL === '') {
-      const error = 'API 서버 URL이 설정되지 않았습니다.\n\nVercel Dashboard → Settings → Environment Variables에서 VITE_API_URL을 설정해주세요.'
+      const error = 'API 서버 URL이 설정되지 않았습니다. Vercel Dashboard → Settings → Environment Variables에서 VITE_API_URL을 설정해주세요.'
       console.error('❌', error)
       return {
         success: false,
